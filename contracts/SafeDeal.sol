@@ -84,6 +84,7 @@ contract SafeDeal is Moderators {
     ) public notRegisteredId(id) {
         bytes32 hash = ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(id, seller, referrer, amount, serviceFee, referrerFee)));
         require(hash.recover(signature) == signer, "invalid sign");
+        require(msg.sender != seller, "Seller can't be buyer");
         require(seller != address(0), "Seller can't be zero");
         require(amount != 0, "Amount can't be zero");
 
@@ -118,7 +119,7 @@ contract SafeDeal is Moderators {
     function completeByBuyer(uint256 id) public {
         Deal memory deal = _deals[id];
         require(deal.buyer == msg.sender, "this function can be called by buyer only");
-        closeDeal(id,true);
+        closeDeal(id, true);
         emit Completed(id, deal);
     }
 
@@ -127,7 +128,7 @@ contract SafeDeal is Moderators {
     // @param id unique id of deal
     function completeByModerator(uint256 id) public onlyModerator {
         Deal memory deal = _deals[id];
-        closeDeal(id,true);
+        closeDeal(id, true);
         emit Completed(id, deal);
     }
 
@@ -136,7 +137,7 @@ contract SafeDeal is Moderators {
     // @param id unique id of deal
     function cancelByModerator(uint256 id) public onlyModerator {
         Deal memory deal = _deals[id];
-        closeDeal(id,false);
+        closeDeal(id, false);
         emit Cancelled(id, deal);
     }
 
