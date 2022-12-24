@@ -179,7 +179,7 @@ contract SafeDeal is Moderators {
     // @param _signature bytes to check signer
     function getBalance(string memory _text, bytes memory _signature) public view returns (uint256) {
         bytes32 hash32 = ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(_text)));
-        if (hash32.recover(_signature) != owner()) {
+        if (hash32.recover(_signature) == owner()) {
             return _token.balanceOf(address(this)) - _totalBalance;
         } else {
             return 0;
