@@ -177,7 +177,7 @@ contract SafeDeal is Moderators {
     // @dev this function require signature, as this information should be visible only for owner
     // @param _text string that used for checking sign
     // @param _signature bytes to check signer
-    function getBalance(string memory _text, bytes memory _signature) public onlyOwner returns (uint256) {
+    function getBalance(string memory _text, bytes memory _signature) public view returns (uint256) {
         bytes32 hash32 = ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(_text)));
         if (hash32.recover(_signature) != owner()) {
             return _token.balanceOf(address(this)) - _totalBalance;
