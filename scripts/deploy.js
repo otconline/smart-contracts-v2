@@ -6,9 +6,11 @@
 // global scope, and execute the script.
 const hre = require("hardhat");
 
+const tokenAddress = "0xe9e7cea3dedca5984780bafc599bd69add087d56"; //busd
+
 async function main() {
   const SafeDeal = await hre.ethers.getContractFactory("SafeDeal");
-  await SafeDeal.deploy();
+  await SafeDeal.deploy(tokenAddress);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

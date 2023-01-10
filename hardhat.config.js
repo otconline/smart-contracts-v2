@@ -1,4 +1,7 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-chai-matchers")
+require('hardhat-docgen');
+
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -11,4 +14,9 @@ module.exports = {
       }
     }
   },
+  docgen: {
+    path: './docs',
+    clear: true,
+    runOnCompile: false,
+  }
 };
