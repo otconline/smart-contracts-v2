@@ -1,3 +1,5 @@
+// SPDX-License-Identifier : MIT
+
 pragma solidity 0.8.12;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -28,7 +30,7 @@ contract Moderators is Ownable {
     /// @notice register new moderator (address)
     /// @dev can be called only by owner
     /// @param _moderator address of new moderator
-    function addModerator(address _moderator) public onlyOwner {
+    function addModerator(address _moderator) external onlyOwner {
         require(_moderator != address(0), "Can't be zero address");
         require(!moderators[_moderator], "moderator already exists");
         moderators[_moderator] = true;
@@ -39,7 +41,7 @@ contract Moderators is Ownable {
     /// @notice delete known moderator
     /// @dev can be called only by owner
     /// @param _moderator address of deleted moderator
-    function removeModerator(address _moderator) public onlyOwner {
+    function removeModerator(address _moderator) external onlyOwner {
         require(_moderator != address(0), "Can't be zero address");
         require(moderators[_moderator], "moderator not found");
         moderators[_moderator] = false;

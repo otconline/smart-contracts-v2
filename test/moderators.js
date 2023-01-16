@@ -7,6 +7,7 @@ describe("Checks Moderators lib", function () {
     let deployer;
     let moderator1;
     let moderator2;
+    let randomAddress;
     let ModeratorsInterface;
     let ModeratorsContract;
 
@@ -14,6 +15,7 @@ describe("Checks Moderators lib", function () {
         deployer = (await ethers.getSigners())[0];
         moderator1 = (await ethers.getSigners())[1].address;
         moderator2 = (await ethers.getSigners())[2].address;
+        randomAddress = (await ethers.getSigners())[3];
 
         ModeratorsInterface = await ethers.getContractFactory("Moderators");
         ModeratorsContract = await ModeratorsInterface.deploy();
@@ -23,6 +25,9 @@ describe("Checks Moderators lib", function () {
     });
 
     it("Adding new moderators", async function () {
+       await expect(ModeratorsContract.connect(randomAddress).addModerator(moderator1),
+           "Added moderator by not owner").to.revertedWith("Ownable: caller is not the owner");
+
         expect(await ModeratorsContract.addModerator(moderator1),
             "Can't add moderator");
 
@@ -50,6 +55,9 @@ describe("Checks Moderators lib", function () {
     });
 
     it("Removing moderators", async function () {
+        await expect(ModeratorsContract.connect(randomAddress).removeModerator(moderator1),
+            "Removed moderator by not owner").to.revertedWith("Ownable: caller is not the owner");
+
         expect(await ModeratorsContract.removeModerator(moderator1),
             "Can't remove moderator");
 

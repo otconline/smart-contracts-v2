@@ -1,3 +1,5 @@
+// SPDX-License-Identifier : MIT
+
 pragma solidity 0.8.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -6,7 +8,6 @@ import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./Moderators.sol";
 
-// SPDX-License-Identifier : MIT
 
 // final version works with BUSD token
 contract SafeDeal is Moderators, EIP712("SafeDeal", "1.0") {
@@ -47,7 +48,6 @@ contract SafeDeal is Moderators, EIP712("SafeDeal", "1.0") {
     modifier notRegisteredId(uint256 id){
         require(!_dealIds[id], "Deal id is used");
         _;
-        _dealIds[id] = true;
     }
 
 
@@ -117,6 +117,7 @@ contract SafeDeal is Moderators, EIP712("SafeDeal", "1.0") {
         });
 
         _deals[id] = deal;
+        _dealIds[id] = true;
 
         _totalBalance += totalAmount;
         emit Started(id, deal);
@@ -200,7 +201,7 @@ contract SafeDeal is Moderators, EIP712("SafeDeal", "1.0") {
     /// @param value amount of fee to withdraw
     function withdraw(address wallet, uint256 value) external onlyOwner {
         require(wallet != address(0), "Can't be zero address");
-        uint balance = _token.balanceOf(address(this)) - _totalBalance;
+        uint256 balance = _token.balanceOf(address(this)) - _totalBalance;
         require(balance >= value, "insufficient tokens");
 
         emit Withdraw(balance, balance - value);

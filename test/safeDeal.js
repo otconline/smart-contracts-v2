@@ -25,6 +25,9 @@ describe("Checks SafeDeal Contract", function () {
         SafeDealInterface = await ethers.getContractFactory("SafeDeal");
         SafeDealContract = await SafeDealInterface.deploy(tokenContract.address);
 
+        await expect(SafeDealInterface.deploy(ethers.constants.AddressZero),
+            "Deployed with zero address").to.revertedWith("Can't be zero")
+
         await tokenContract.approve(SafeDealContract.address, ethers.constants.MaxUint256);
 
         // moderators library checks in other test file
@@ -32,6 +35,14 @@ describe("Checks SafeDeal Contract", function () {
     });
 
     it("Checking signer", async function () {
+        await expect(SafeDealContract.connect(randomUser).setSigner(signer.address),
+            "Added by not owner")
+            .to.revertedWith("Ownable: caller is not the owner")
+
+        await expect(SafeDealContract.setSigner(ethers.constants.AddressZero),
+            "Set zero address")
+            .to.revertedWith("Can't be zero")
+
         expect(await SafeDealContract.setSigner(signer.address),
             "Can't add signer")
             .to.emit(SafeDealInterface, "NewSigner")
@@ -47,7 +58,7 @@ describe("Checks SafeDeal Contract", function () {
         let seller = deployer.address;
         let amount = 100;
         const serviceFee = 10;
-        const referrerFee = 1;
+        let referrerFee = 1;
 
 
         let signature = await signInfo(
@@ -149,6 +160,30 @@ describe("Checks SafeDeal Contract", function () {
             referrerFee,
             signature
         ), "Referrer is zero").to.revertedWith("referrer can't be zero");
+
+
+        referrerFee = 0;
+        signature = await signInfo(
+            chainId,
+            SafeDealContract.address,
+            id,
+            seller,
+            referrer,
+            amount,
+            serviceFee,
+            referrerFee
+        )
+
+
+         expect(await SafeDealContract.start(
+            id,
+            seller,
+            referrer,
+            amount,
+            serviceFee,
+            referrerFee,
+            signature
+        ), "Zero referrer can't be added");
     })
 
     it("Open And close deal by buyer", async function () {
@@ -158,6 +193,97 @@ describe("Checks SafeDeal Contract", function () {
         const amount = 100;
         const serviceFee = 10;
         const referrerFee = 1;
+
+
+        const signature = await signInfo(
+            chainId,
+            SafeDealContract.address,
+            id,
+            seller,
+            referrer,
+            amount,
+            serviceFee,
+            referrerFee
+        )
+
+        const balanceBefore = await tokenContract.balanceOf(deployer.address);
+
+        let startTx = await SafeDealContract.start(
+            id,
+            seller,
+            referrer,
+            amount,
+            serviceFee,
+            referrerFee,
+            signature
+        );
+
+        await checkEvent(startTx, "Started");
+
+        const balanceAfter = await tokenContract.balanceOf(deployer.address);
+        expect(
+            balanceBefore
+                .sub(amount.toString())
+                .sub(serviceFee.toString())
+                .sub(referrerFee.toString())
+            , "Balance not changed").to.equal(balanceAfter);
+
+        await expect(SafeDealContract.start(
+            id,
+            seller,
+            referrer,
+            amount,
+            serviceFee,
+            referrerFee,
+            signature
+        ), "Start started twice").to.be.reverted;
+
+        const balanceSellerBefore = await tokenContract.balanceOf(seller);
+        const balanceReferrerBefore = await tokenContract.balanceOf(referrer);
+        const balanceOfContractBefore = await tokenContract.balanceOf(SafeDealContract.address);
+
+        await expect(SafeDealContract.connect(randomUser).completeByBuyer(id),
+            "Transaction called by not buyer"
+        ).to.be.reverted;
+
+        let closeTx = await SafeDealContract.completeByBuyer(id);
+        await checkEvent(closeTx, "Completed");
+
+        await expect(SafeDealContract.completeByBuyer(id),"Closed non-active deal").to.revertedWith("closed trade")
+
+        const balanceSellerAfter = await tokenContract.balanceOf(seller);
+        const balanceReferrerAfter = await tokenContract.balanceOf(referrer);
+        const balanceOfContractAfter = await tokenContract.balanceOf(SafeDealContract.address);
+
+
+        expect(
+            balanceSellerBefore.add(amount),
+            "Seller balance are not updated")
+            .to.equal(balanceSellerAfter);
+
+        expect(balanceReferrerBefore.add(referrerFee),
+            "Referrer balance are not updated")
+            .to.equal(balanceReferrerAfter);
+
+        expect(
+            balanceOfContractAfter,
+            "Service fee are not collected")
+            .to.equal(balanceOfContractBefore.sub(amount).sub(referrerFee));
+
+        expect(
+            await SafeDealContract.getBalance(), "Balance are not updated"
+        ).to.equal(serviceFee);
+
+
+    })
+
+    it("Open And close deal with no referrer by buyer", async function () {
+        const id = 8;
+        const seller = "0xB7a5c3f3e1243f995f4B0B29de315B79d583194b";
+        const referrer = "0x715B577Bb586e306c5cD9c98c948d37A712B3c82";
+        const amount = 100;
+        const serviceFee = 10;
+        const referrerFee = 0;
 
 
         const signature = await signInfo(
@@ -232,10 +358,6 @@ describe("Checks SafeDeal Contract", function () {
             balanceOfContractAfter,
             "Service fee are not collected")
             .to.equal(balanceOfContractBefore.sub(amount).sub(referrerFee));
-
-        expect(
-            await SafeDealContract.getBalance(), "Balance are not updated"
-        ).to.equal(serviceFee);
     })
 
 
